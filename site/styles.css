@@ -1,0 +1,76 @@
+/* styles.css */
+#game-container {
+    width: 400px;
+    margin: auto;
+    text-align: center;
+}
+
+#drop-zone {
+    display: grid;
+    grid-template-columns: repeat(7, 50px);
+    grid-gap: 5px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.drop-cell {
+    width: 50px;
+    height: 50px;
+    background-color: #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border: 1px solid #bbb;
+    transition: background-color 0.5s; /* Gładka zmiana koloru */
+}
+
+.drop-cell:hover {
+    background-color: #dfc639; /* Kolor tła podczas najechania */
+}
+
+.highlight {
+    background-color: #d83823; /* Jasnożółty kolor dla podświetlenia */
+    transition: background-color 0.5s; /* Gładka zmiana koloru */
+}
+
+
+#board-cells {
+    display: grid;
+    grid-template-columns: repeat(7, 50px);
+    grid-gap: 5px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.cell {
+    width: 50px;
+    height: 50px;
+    background-color: #f4f4f4;
+    border-radius: 50%; /* Make cells circles */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #ccc;
+}
+
+/* styles.css */
+.probabilities {
+    display: grid;
+    grid-template-columns: repeat(7, 50px);
+    grid-gap: 5px;
+    justify-content: center;
+    margin-top: 5px;
+}
+
+.probability-value {
+    font-size: 0.75em;
+    color: blue;
+    margin-bottom: 5px; /* Distance from the drop cells */
+}
+
+#ai-win-prob-container {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #333;
+}

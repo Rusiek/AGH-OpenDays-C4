@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Connect Four z AI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="game-container">
+    <button id="start-game">Start</button>
+    <select id="ai-model">
+        <option value="random">Random</option>
+        <option value="random_smart_1">Minmax2</option>
+        <option value="random_smart_2">Minmax3</option>
+        <option value="random_smart_3">Minmax5 + <span>&#945;</span><span>&#946;</span></option>
+        <option value="random_smart_4">Minmax7 + <span>&#945;</span><span>&#946;</span></option>
+        <option value="minmax_cache">Minmax6 + <span>&#945;</span><span>&#946;</span> RT</option>
+    </select>
+    <div id="probabilities" class="probabilities">
+        <!-- Probability values will be added by JavaScript -->
+    </div>
+    <div id="drop-zone">
+        <!-- Drop cells will be added by JavaScript -->
+    </div>
+    <div id="board" style="display:none;">
+        <div id="board-cells">
+            <!-- Cells will be added by JavaScript -->
+        </div>
+    </div>
+    <button id="new-game" style="display:none;">Nowa Gra</button>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
