@@ -124,7 +124,7 @@ def evaluate(board, binary=False):
     return score
 
 
-def minmax(board, max_depth, player, curr_depth, alpha, beta):
+def minmax(board, max_depth, player, curr_depth):
     if curr_depth == max_depth:
         return evaluate(board)
     
