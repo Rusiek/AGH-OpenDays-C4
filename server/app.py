@@ -192,6 +192,9 @@ def make_move_B():
     print(scores)
     top_score = max(scores)
     selected_column = scores.index(top_score)
+    if selected_column not in valid_moves(board):
+        selected_column = random.choice(valid_moves(board))
+
 
     scores = softmax(scores)
     scores = [round(100 * score, 1) for score in scores]
@@ -248,6 +251,9 @@ def make_move_C():
     print(scores)
     top_score = max(scores)
     selected_column = scores.index(top_score)
+    if selected_column not in valid_moves(board):
+        selected_column = random.choice(valid_moves(board))
+
 
     scores = softmax(scores)
     scores = [round(100 * score, 1) for score in scores]
