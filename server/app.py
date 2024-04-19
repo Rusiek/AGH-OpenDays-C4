@@ -3,6 +3,8 @@ from flask_cors import CORS  # Importujesz CORS
 import random
 from copy import deepcopy
 import json
+from time import time
+from math import log2, sqrt
 
 
 app = Flask(__name__)
@@ -74,7 +76,7 @@ def make_move_A():
     return jsonify(output)
 
 
-def evaluate_window(window):
+def evaluate_window(window, binary=False):
     score = 0
     EMPTY = 0
     PLAYER = 1
@@ -91,30 +93,33 @@ def evaluate_window(window):
         score -= 5
     elif window.count(PLAYER) == 4:
         score -= 10 ** -4
+    if binary:
+        if score == 10 ** 4 or score == -10 ** 4:
+            return score
     return score
 
 
-def evaluate(board):
+def evaluate(board, binary=False):
     score = 0
     for c in range(7 - 3):
         for r in range(6):
             window = [board[c + i][r] for i in range(4)]
-            score += evaluate_window(window)
+            score += evaluate_window(window, binary)
 
     for c in range(7):
         for r in range(6 - 3):
             window = [board[c][r + i] for i in range(4)]
-            score += evaluate_window(window)
+            score += evaluate_window(window, binary)
 
     for c in range(7 - 3):
         for r in range(6 - 3):
             window = [board[c + i][r + i] for i in range(4)]
-            score += evaluate_window(window)
+            score += evaluate_window(window, binary)
 
     for c in range(3, 7):
         for r in range(6 - 3):
             window = [board[c - i][r + i] for i in range(4)]
-            score += evaluate_window(window)
+            score += evaluate_window(window, binary)
 
     return score
 
@@ -157,6 +162,10 @@ def softmax(tab):
     return [x / sum(tab) for x in tab]
 
 
+def minmaxscaler(tab, b):
+    return [(x - min(tab)) / (max(tab) - min(tab)) for x in tab]
+
+
 @app.route('/move_minmax', methods=['POST'])
 def make_move_B():
     data = request.get_json()
@@ -173,6 +182,8 @@ def make_move_B():
             make_move_col(new_board, col, 2)
             if check_winner(new_board) == 2:
                 scores.append(10 ** 4)
+            elif check_winner(new_board) == 1:
+                scores.append(-10 ** 4)
             else:
                 scores.append(minmax(new_board, MAX_DEPTH, 'player', 1))
         else:
@@ -227,6 +238,8 @@ def make_move_C():
             make_move_col(new_board, col, 2)
             if check_winner(new_board) == 2:
                 scores.append(10 ** 4)
+            elif check_winner(new_board) == 1:
+                scores.append(-10 ** 4)
             else:
                 scores.append(minmax(new_board, MAX_DEPTH, 'player', 1))
         else:
@@ -247,6 +260,137 @@ def make_move_C():
     cache[hash_board] = scores
     print('Updated cache')
     print(f'Size of cache: {len(cache)}')
+
+    return jsonify(output)
+
+
+class MockMCTS:
+    def __init__(self, board, root=None):
+        self.board = board
+        self.root = root
+        self.visits = 0
+        self.wins = -1
+        self.losses = -1
+    
+    def simulate_one_game(self):
+        self.backpropagate("AI" if check_winner(self.board) == 2 else "Player")
+
+    def backpropagate(self, win):
+        self.visits += 1
+        if win == "AI":
+            self.wins += 1
+        elif win == "Player":
+            self.losses += 1
+
+        if self.root:
+            self.root.backpropagate(win)
+
+
+class MCTS:
+    def __init__(self, board, player, root=None, runtime=None, games=None):
+        self.root = root
+        self.board = deepcopy(board)
+        self.player = player
+        self.children = []
+        self.visits = 0
+        self.wins = 0
+        self.losses = 0
+        self.runtime = runtime
+        self.games = games
+
+
+    def select(self):
+        return max(self.children, key=lambda child: child.wins / (child.visits + 1) + sqrt(2 * log2(self.visits + 1) / (child.visits + 1)) if child.losses >= 0 else -1)
+
+
+    def expand(self):
+        if not self.children:
+            for col in range(7):
+                new_board = deepcopy(self.board)
+                if col in valid_moves(self.board):
+                    make_move_col(new_board, col, self.player)
+                    if check_winner(new_board):
+                        self.children.append(MockMCTS(new_board, root=self))
+                    else:
+                        self.children.append(MCTS(new_board, 2 if self.player == 1 else 1, root=self))
+                elif self.root == None:
+                    self.children.append(MockMCTS(new_board, root=self))
+
+
+    def simulate(self):
+        if self.runtime:
+            start_time = time()
+            while time() - start_time < self.runtime:
+                self.simulate_one_game()
+        else:
+            for i in range(self.games):
+                print([(child.wins, child.losses, child.visits) for child in self.children])
+                self.simulate_one_game()
+                
+
+
+    def simulate_one_game(self):
+        if check_winner(self.board):
+            self.backpropagate("AI" if check_winner(self.board) == 2 else "Player")
+            return
+        if not valid_moves(self.board):
+            self.backpropagate("Draw")
+            return
+        self.expand()
+        child = self.select()
+        
+        board = deepcopy(child.board)
+        player = 1 if self.player == 2 else 2
+
+        while not check_winner(board) and valid_moves(board):
+            make_move_col(board, random.choice(valid_moves(board)), 1 if self.player == 2 else 2)
+            player = 1 if player == 2 else 2
+            
+        if check_winner(board) == 2:
+            self.backpropagate("AI")
+        elif check_winner(board) == 1:
+            self.backpropagate("Player")
+
+
+    def backpropagate(self, win):
+        self.visits += 1
+        if win == "AI":
+            self.wins += 1
+        elif win == "Player":
+            self.losses += 1
+
+
+    def get_probabilities(self):
+        print([(child.wins, child.losses, child.visits) for child in self.children])
+        return [max((child.wins + 1) / (child.visits + 1), (child.losses + 1) / (child.visits + 1)) if child.visits else 0 for child in self.children]
+
+
+@app.route('/move_monte_carlo', methods=['POST'])
+def make_move_D():
+    data = request.get_json()
+    board = data['board']
+    power = data.get('power', 100)
+    power = 100
+    runtime = data.get('runtime', None)
+    for line in board:
+        print(line)
+    print(power, runtime)
+    mcts = MCTS(board, 2, games=power, runtime=runtime)
+    mcts.simulate()
+    scores = mcts.get_probabilities()
+    #scores = minmaxscaler(scores, 10)
+    #scores = softmax(scores)
+    print(scores)
+    top_score = max(scores)
+    selected_column = scores.index(top_score)
+
+    scores = [round(100 * score, 1) for score in scores]
+
+    output = {
+        'column': selected_column,
+        'probabilities': scores
+    }
+    print(output)
 
     return jsonify(output)
 

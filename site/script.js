@@ -205,7 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
             random_smart_3: 'http://localhost:5000/move_minmax',
             random_smart_4: 'http://localhost:5000/move_minmax',
             minmax_cache: 'http://localhost:5000/move_minmax_cache',
-            hard: 'http://localhost:5000/move_hard'
+            mcts_1: 'http://localhost:5000/move_monte_carlo',
+            mcts_2: 'http://localhost:5000/move_monte_carlo',
+            mcts_3: 'http://localhost:5000/move_monte_carlo',
+            mcts_4: 'http://localhost:5000/move_monte_carlo',
+            mcts_5: 'http://localhost:5000/move_monte_carlo',
+            mcts_6: 'http://localhost:5000/move_monte_carlo'
         };
 
         const url = urlMap[aiMode] || urlMap.random;
@@ -229,6 +234,30 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (aiMode === 'minmax_cache') {
             console.log("minmax_cache");
             body = JSON.stringify({board: board, power: 6});
+        }
+        else if (aiMode === 'mcts_1') {
+            console.log("mcts_1");
+            body = JSON.stringify({board: board, power: 1000});
+        }
+        else if (aiMode === 'mcts_2') {
+            console.log("mcts_2");
+            body = JSON.stringify({board: board, power: 10000});
+        }
+        else if (aiMode === 'mcts_3') {
+            console.log("mcts_3");
+            body = JSON.stringify({board: board, power: 100000});
+        }
+        else if (aiMode === 'mcts_4') {
+            console.log("mcts_4");
+            body = JSON.stringify({board: board, runtime: 1});
+        }
+        else if (aiMode === 'mcts_5') {
+            console.log("mcts_5");
+            body = JSON.stringify({board: board, runtime: 3});
+        }
+        else if (aiMode === 'mcts_6') {
+            console.log("mcts_6");
+            body = JSON.stringify({board: board, runtime: 10});
         }
         else {
             body = JSON.stringify({board: board});
