@@ -124,7 +124,7 @@ def evaluate(board, binary=False):
     return score
 
 
-def minmax(board, max_depth, player, curr_depth):
+def minmax(board, max_depth, player, curr_depth, alpha, beta):
     if curr_depth == max_depth:
         return evaluate(board)
     
@@ -141,7 +141,7 @@ def minmax(board, max_depth, player, curr_depth):
                 return 10 ** 4
             score = minmax(board_copy, max_depth, 'human', curr_depth + 1)
             top_score = max(top_score, score)
-            #print(' ' * curr_depth, top_score)
+
         return top_score
     else:
         top_score = 10 ** 4
@@ -389,6 +389,9 @@ def make_move_D():
     print(scores)
     top_score = max(scores)
     selected_column = scores.index(top_score)
+    if selected_column not in valid_moves(board):
+        top_score = max(scores[selected_column:])
+        selected_column = scores.index(top_score) + selected_column
 
     scores = [round(100 * score, 1) for score in scores]
 
