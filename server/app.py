@@ -390,8 +390,7 @@ def make_move_D():
     top_score = max(scores)
     selected_column = scores.index(top_score)
     if selected_column not in valid_moves(board):
-        top_score = max(scores[selected_column:])
-        selected_column = scores.index(top_score) + selected_column
+        selected_column = random.choice(valid_moves(board))
 
     scores = [round(100 * score, 1) for score in scores]
 
