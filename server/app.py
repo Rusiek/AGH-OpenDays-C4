@@ -265,12 +265,22 @@ def make_move_C():
 
 
 class MockMCTS:
-    def __init__(self, board, root=None):
+    def __init__(self, board, who_won=None, root=None, player=None):
         self.board = board
         self.root = root
-        self.visits = 0
-        self.wins = -1
-        self.losses = -1
+        self.visits = 1
+        self.wins = 0
+        self.losses = 0
+        self.player = player
+        if who_won == "AI":
+            self.wins = 1
+            self.losses = 0
+        if who_won == "Player":
+            self.wins = 0
+            self.losses = 1
+        if who_won == "Draw":
+            self.wins = 0
+            self.losses = 0
     
     def simulate_one_game(self):
         self.backpropagate("AI" if check_winner(self.board) == 2 else "Player")
@@ -309,12 +319,13 @@ class MCTS:
                 new_board = deepcopy(self.board)
                 if col in valid_moves(self.board):
                     make_move_col(new_board, col, self.player)
+                    winner = check_winner(new_board)
                     if check_winner(new_board):
-                        self.children.append(MockMCTS(new_board, root=self))
+                        self.children.append(MockMCTS(new_board, who_won=winner, root=self, player=1 if self.player == 2 else 2))
                     else:
                         self.children.append(MCTS(new_board, 2 if self.player == 1 else 1, root=self))
                 elif self.root == None:
-                    self.children.append(MockMCTS(new_board, root=self))
+                    self.children.append(MockMCTS(new_board, root=self, player=1 if self.player == 2 else 2))
 
 
     def simulate(self):
@@ -323,33 +334,28 @@ class MCTS:
             while time() - start_time < self.runtime:
                 self.simulate_one_game()
         else:
-            for i in range(self.games):
-                print([(child.wins, child.losses, child.visits) for child in self.children])
+            for _ in range(self.games):
                 self.simulate_one_game()
                 
 
-
     def simulate_one_game(self):
-        if check_winner(self.board):
-            self.backpropagate("AI" if check_winner(self.board) == 2 else "Player")
-            return
-        if not valid_moves(self.board):
-            self.backpropagate("Draw")
-            return
         self.expand()
         child = self.select()
-        
         board = deepcopy(child.board)
-        player = 1 if self.player == 2 else 2
+        player = child.player
 
         while not check_winner(board) and valid_moves(board):
-            make_move_col(board, random.choice(valid_moves(board)), 1 if self.player == 2 else 2)
+            make_move_col(board, random.choice(valid_moves(board)), player)
             player = 1 if player == 2 else 2
-            
-        if check_winner(board) == 2:
-            self.backpropagate("AI")
-        elif check_winner(board) == 1:
-            self.backpropagate("Player")
+
+        winner = check_winner(board)
+        if winner == 2:
+            child.backpropagate("AI")
+            return
+        elif winner == 1:
+            child.backpropagate("Player")
+            return
+        child.backpropagate("Draw")
 
 
     def backpropagate(self, win):
@@ -358,11 +364,14 @@ class MCTS:
             self.wins += 1
         elif win == "Player":
             self.losses += 1
+        
+        if self.root:
+            self.root.backpropagate(win)
 
 
     def get_probabilities(self):
         print([(child.wins, child.losses, child.visits) for child in self.children])
-        return [max((child.wins + 1) / (child.visits + 1), (child.losses + 1) / (child.visits + 1)) if child.visits else 0 for child in self.children]
+        return [(child.wins + 1) / (child.visits + 1) if child.visits else 0 for child in self.children]
 
 
 @app.route('/move_monte_carlo', methods=['POST'])
@@ -370,7 +379,6 @@ def make_move_D():
     data = request.get_json()
     board = data['board']
     power = data.get('power', 100)
-    power = 100
     runtime = data.get('runtime', None)
     for line in board:
         print(line)
@@ -378,8 +386,6 @@ def make_move_D():
     mcts = MCTS(board, 2, games=power, runtime=runtime)
     mcts.simulate()
     scores = mcts.get_probabilities()
-    #scores = minmaxscaler(scores, 10)
-    #scores = softmax(scores)
     print(scores)
     top_score = max(scores)
     selected_column = scores.index(top_score)
